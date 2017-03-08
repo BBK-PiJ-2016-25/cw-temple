@@ -2,8 +2,14 @@ package student;
 
 import game.EscapeState;
 import game.ExplorationState;
+import game.Node;
+import game.NodeStatus;
+
+import java.util.*;
 
 public class Explorer {
+
+  private Map<Long, Integer> visited = new TreeMap<>();
 
   /**
    * Explore the cavern, trying to find the orb in as few steps as possible.
@@ -36,8 +42,34 @@ public class Explorer {
    * @param state the information available at the current state
    */
   public void explore(ExplorationState state) {
-    //TODO:
+    visited.put(state.getCurrentLocation(),1);
+    while (state.getDistanceToTarget() != 0) {
+      long nextLocation = getNextLocation(state);
+      if (!visited.containsKey(nextLocation)) {
+        visited.put(nextLocation, 1);
+      } else {
+        visited.put(nextLocation, visited.get(nextLocation) + 1);
+      }
+      state.moveTo(nextLocation);
+    }
+    return;
   }
+
+  private Long getNextLocation(ExplorationState state) {
+    Comparator<NodeStatus> comparatorVisited =
+            Comparator.comparingInt(a -> visited.getOrDefault(a.getId(), 0));
+    Comparator<NodeStatus> comparatorDistance =
+            Comparator.naturalOrder();
+
+    final Object[] children =
+                    state.getNeighbours()
+                    .stream()
+                    .sorted(comparatorVisited.thenComparing(comparatorDistance))
+                    .map(a -> a.getId())
+                    .toArray();
+    return (Long) children[0];
+  }
+
 
   /**
    * Escape from the cavern before the ceiling collapses, trying to collect as much
