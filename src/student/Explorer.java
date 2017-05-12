@@ -95,39 +95,40 @@ public class Explorer {
    * @param state the information available at the current state
    */
     public void escape(EscapeState state) {
-        Node startNode = state.getCurrentNode();
-        Node exitNode = state.getExit();
+        List<Node> directions = findShortestPath(state.getCurrentNode(), state.getExit());
+        directions.stream().forEach(a -> state.moveTo(a));
+      }
 
-        Map<Node, Boolean> visited = new HashMap<Node, Boolean>();
+    public List<Node> findShortestPath(Node startNode, Node exitNode) {
+      Map<Node, Boolean> visited = new HashMap<Node, Boolean>();
 
-        Map<Node, Node> previous = new HashMap<Node, Node>();
+      Map<Node, Node> previous = new HashMap<Node, Node>();
 
-        List<Node> directions = new LinkedList();
-        Queue<Node> q = new LinkedList();
-        Node current = startNode;
+      List<Node> directions = new LinkedList();
+      Queue<Node> q = new LinkedList();
+      Node current = startNode;
 
-        q.add(current);
-        visited.put(current, true);
-        while(!q.isEmpty()){
-          current = q.remove();
-          if (current.equals(exitNode)){
-            break;
-          }else{
-            for(Node node : current.getNeighbours()){
-              if(!visited.containsKey(node)){
-                q.add(node);
-                visited.put(node, true);
-                previous.put(node, current);
-              }
+      q.add(current);
+      visited.put(current, true);
+      while (!q.isEmpty()) {
+        current = q.remove();
+        if (current.equals(exitNode)) {
+          break;
+        } else {
+          for (Node node : current.getNeighbours()) {
+            if (!visited.containsKey(node)) {
+              q.add(node);
+              visited.put(node, true);
+              previous.put(node, current);
             }
           }
         }
-        for(Node node = exitNode; node != null; node = previous.get(node)) {
-          directions.add(node);
-        }
-        Collections.reverse(directions);
-        System.out.println(directions);
-        directions.remove(0);
-        directions.stream().forEach(a -> state.moveTo(a));
       }
+      for (Node node = exitNode; node != null; node = previous.get(node)) {
+        directions.add(node);
+      }
+      Collections.reverse(directions);
+      directions.remove(0);
+      return directions;
+    }
 }
