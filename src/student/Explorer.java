@@ -10,6 +10,7 @@ import java.util.*;
 public class Explorer {
 
   private Map<Long, Integer> visited = new TreeMap<>();
+  private Map<Long, Vertex> escapeVisited = new HashMap<Long, Vertex>();
 
   /**
    * Explore the cavern, trying to find the orb in as few steps as possible.
@@ -70,8 +71,7 @@ public class Explorer {
     return (Long) children[0];
   }
 
-
-  /**
+    /**
    * Escape from the cavern before the ceiling collapses, trying to collect as much
    * gold as possible along the way. Your solution must ALWAYS escape before time runs
    * out, and this should be prioritized above collecting gold.
@@ -94,7 +94,40 @@ public class Explorer {
    *
    * @param state the information available at the current state
    */
-  public void escape(EscapeState state) {
-    //TODO: Escape from the cavern before time runs out
-  }
+    public void escape(EscapeState state) {
+        Node startNode = state.getCurrentNode();
+        Node exitNode = state.getExit();
+
+        Map<Node, Boolean> visited = new HashMap<Node, Boolean>();
+
+        Map<Node, Node> previous = new HashMap<Node, Node>();
+
+        List<Node> directions = new LinkedList();
+        Queue<Node> q = new LinkedList();
+        Node current = startNode;
+
+        q.add(current);
+        visited.put(current, true);
+        while(!q.isEmpty()){
+          current = q.remove();
+          if (current.equals(exitNode)){
+            break;
+          }else{
+            for(Node node : current.getNeighbours()){
+              if(!visited.containsKey(node)){
+                q.add(node);
+                visited.put(node, true);
+                previous.put(node, current);
+              }
+            }
+          }
+        }
+        for(Node node = exitNode; node != null; node = previous.get(node)) {
+          directions.add(node);
+        }
+        Collections.reverse(directions);
+        System.out.println(directions);
+        directions.remove(0);
+        directions.stream().forEach(a -> state.moveTo(a));
+      }
 }
