@@ -10,7 +10,6 @@ import java.util.*;
 public class Explorer {
 
   private Map<Long, Integer> visited = new TreeMap<>();
-  private Map<Long, Vertex> escapeVisited = new HashMap<Long, Vertex>();
 
   /**
    * Explore the cavern, trying to find the orb in as few steps as possible.
@@ -96,8 +95,15 @@ public class Explorer {
    */
     public void escape(EscapeState state) {
         List<Node> directions = findShortestPath(state.getCurrentNode(), state.getExit());
-        directions.stream().forEach(a -> state.moveTo(a));
+        directions.forEach(a -> moveAndPick(state, a));
       }
+
+    public void moveAndPick(EscapeState state, Node node) {
+      state.moveTo(node);
+      if(state.getCurrentNode().getTile().getGold() > 0) {
+        state.pickUpGold();
+      }
+    }
 
     public List<Node> findShortestPath(Node startNode, Node exitNode) {
       Map<Node, Boolean> visited = new HashMap<Node, Boolean>();
