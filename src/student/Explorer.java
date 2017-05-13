@@ -4,9 +4,9 @@ import game.EscapeState;
 import game.ExplorationState;
 import game.Node;
 import game.NodeStatus;
-import game.Pair;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Explorer {
 
@@ -62,13 +62,12 @@ public class Explorer {
     Comparator<NodeStatus> comparatorDistance =
             Comparator.naturalOrder();
 
-    final Object[] children =
-                    state.getNeighbours()
-                    .stream()
-                    .sorted(comparatorVisited.thenComparing(comparatorDistance))
-                    .map(a -> a.getId())
-                    .toArray();
-    return (Long) children[0];
+    return state.getNeighbours()
+            .stream()
+            .sorted(comparatorVisited.thenComparing(comparatorDistance))
+            .map(a -> a.getId())
+            .findFirst()
+            .get();
   }
 
     /**
@@ -95,14 +94,20 @@ public class Explorer {
    * @param state the information available at the current state
    */
     public void escape(EscapeState state) {
-        List<Node> directions = new LinkedList<>();
-        if (findShortestPath(state.getCurrentNode(), getNodeWithMostGold(state)).size()
-          + findShortestPath(getNodeWithMostGold(state), state.getExit()).size() < state.getTimeRemaining()) {
-          findShortestPath(state.getCurrentNode(), getNodeWithMostGold(state)).forEach(a -> moveAndPick(state, a));
+      visited.clear();
+      List<Node> directions = new LinkedList<>();
+      for (Node node: getNodesOrderedByAmountOfGold(state)) {
+        if (!visited.containsKey(node.getId()) &&
+                state.getTimeRemaining() > findWeightedLengthOfPath(state.getCurrentNode(), findShortestPath(state.getCurrentNode(), node))
+                + findWeightedLengthOfPath(node, findShortestPath(node, state.getExit()))) {
+          findShortestPath(state.getCurrentNode(), node).forEach(a -> moveAndPick(state, a));
+          visited.put(node.getId(), 0);
         }
-        directions = findShortestPath(state.getCurrentNode(), state.getExit());
-        directions.forEach(a -> moveAndPick(state, a));
       }
+      directions = findShortestPathToExit(state);
+      System.out.println("On way back...");
+      directions.forEach(a -> moveAndPick(state, a));
+    }
 
     public void moveAndPick(EscapeState state, Node node) {
       state.moveTo(node);
@@ -111,12 +116,24 @@ public class Explorer {
       }
     }
 
-    public Node getNodeWithMostGold(EscapeState state) {
+    public List<Node> getNodesOrderedByAmountOfGold(EscapeState state) {
       Comparator<Node> comparatorGold =
-              (a, b) -> Integer.compare( a.getTile().getGold(), b.getTile().getGold());
-      Node maxGoldNode = state.getVertices().stream().max(comparatorGold).get();
-      return maxGoldNode;
+              (a, b) -> Integer.compare( b.getTile().getGold(), a.getTile().getGold());
+      return state.getVertices().stream().sorted(comparatorGold).collect(Collectors.toList());
     }
+
+  public int findWeightedLengthOfPath(Node currentNode, List<Node> directions) {
+      int distance = 0;
+      if (directions.size() == 0) {
+        return 0;
+      } else {
+        distance = currentNode.getEdge(directions.get(0)).length();
+        for (int i = 0; i < directions.size() - 1; i++) {
+          distance += directions.get(i).getEdge(directions.get(i + 1)).length();
+        }
+      }
+    return distance;
+  }
 
     public List<Node> findShortestPath(Node startNode, Node exitNode) {
       Map<Node, Boolean> visited = new HashMap<Node, Boolean>();
@@ -150,4 +167,9 @@ public class Explorer {
       directions.remove(0);
       return directions;
     }
+
+    public List<Node> findShortestPathToExit(EscapeState state) {
+      return findShortestPath(state.getCurrentNode(), state.getExit());
+    }
 }
+
