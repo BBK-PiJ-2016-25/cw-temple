@@ -4,6 +4,7 @@ import game.EscapeState;
 import game.ExplorationState;
 import game.Node;
 import game.NodeStatus;
+import game.Pair;
 
 import java.util.*;
 
@@ -94,7 +95,12 @@ public class Explorer {
    * @param state the information available at the current state
    */
     public void escape(EscapeState state) {
-        List<Node> directions = findShortestPath(state.getCurrentNode(), state.getExit());
+        List<Node> directions = new LinkedList<>();
+        if (findShortestPath(state.getCurrentNode(), getNodeWithMostGold(state)).size()
+          + findShortestPath(getNodeWithMostGold(state), state.getExit()).size() < state.getTimeRemaining()) {
+          findShortestPath(state.getCurrentNode(), getNodeWithMostGold(state)).forEach(a -> moveAndPick(state, a));
+        }
+        directions = findShortestPath(state.getCurrentNode(), state.getExit());
         directions.forEach(a -> moveAndPick(state, a));
       }
 
@@ -103,6 +109,13 @@ public class Explorer {
       if(state.getCurrentNode().getTile().getGold() > 0) {
         state.pickUpGold();
       }
+    }
+
+    public Node getNodeWithMostGold(EscapeState state) {
+      Comparator<Node> comparatorGold =
+              (a, b) -> Integer.compare( a.getTile().getGold(), b.getTile().getGold());
+      Node maxGoldNode = state.getVertices().stream().max(comparatorGold).get();
+      return maxGoldNode;
     }
 
     public List<Node> findShortestPath(Node startNode, Node exitNode) {
